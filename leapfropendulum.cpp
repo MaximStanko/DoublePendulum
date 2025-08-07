@@ -59,24 +59,28 @@ coord calculate_coord_from_angle(double theta) {
 
 void print_pendulum_pos(movement& m, double t, bool debug) {
     coord c = calculate_coord_from_angle(m.s / l);
-    cout << "t = " << round_to(t, 3) << " :   x = " << (c.x >= 0 ? " " : "") << round_to(c.x / l, 3) << "\n";
-    cout << "              " << "y = " << (c.y >= 0 ? " " : "") << round_to(c.y, 3);
+    string rounded_t = round_to(t, 3);
+    string empty_space(rounded_t.length() + 9, ' ');
+    cout << "t = " << rounded_t << " :   x = " << (c.x >= 0 ? " " : "") << round_to(c.x / l, 3) << "\n";
+    cout << empty_space << "y = " << (c.y >= 0 ? " " : "") << round_to(c.y, 3);
     if (debug) {
         cout << "\n";
-        cout << "              " << "v = " << round_to(m.v, 3) << "\n";
-        cout << "              " << "a = " << round_to(m.a, 3) << endl;
+        cout << empty_space << "v = " << round_to(m.v, 3) << "\n";
+        cout << empty_space << "a = " << round_to(m.a, 3) << endl;
     } else {
         cout << endl;
     }
 }
 
 void print_pure_state(movement& m, double t, bool debug) {
-    cout << "t = " << round_to(t, 3) << " :   theta = " << round_to(m.s / l, 3);
+    string rounded_t = round_to(t, 3);
+    cout << "t = " << rounded_t << " :   theta = " << round_to(m.s / l, 3);
     cout << " (" << round_to((m.s / l) / PI * 180.0, 1) << "*)";
     if (debug) {
+        string empty_space(rounded_t.length() + 9, ' ');
         cout << "\n";
-        cout << "              " << "v =     " << round_to(m.v, 3) << "\n";
-        cout << "              " << "a =     " << round_to(m.a, 3) << endl;
+        cout << empty_space << "v =     " << round_to(m.v, 3) << "\n";
+        cout << empty_space << "a =     " << round_to(m.a, 3) << endl;
     } else {
         cout << endl;
     }
@@ -123,14 +127,15 @@ class Pendulum : public olc::PixelGameEngine {
         double t;
         double real_t;
         
-        Pendulum(double _dt, double _viewport_size, function<void (movement&, double, bool)> _output_func, int _debug = 0) {
+        Pendulum(double _dt, double _viewport_size, int _debug = 0) {
             sAppName = "Pendulum Simulation";
 
             dt = _dt;
 
             viewport_size = _viewport_size;
-            output_func = _output_func;
             debug = _debug;
+
+            output_func = debug > 1 ? print_pure_state : print_pendulum_pos;
         }
 
         pixel_pos coord_to_pixel_pos(coord c) {
@@ -159,7 +164,7 @@ class Pendulum : public olc::PixelGameEngine {
             DrawSprite(origin.x - central_img.width / 2, origin.y - central_img.height, &central_img);
 
             if (debug > 0)
-                output_func(m, t, debug > 1);
+                output_func(m, t, debug > 2);
 
             return true;
         }
@@ -181,14 +186,14 @@ class Pendulum : public olc::PixelGameEngine {
             prev_frop = frop;
 
             if (debug > 0)
-                output_func(m, t, debug > 1);
+                output_func(m, t, debug > 2);
 
             return true;
         }
 };
 
 int main() {
-    Pendulum p(0.001, 2.25, print_pendulum_pos, false);
+    Pendulum p(0.001, 2.25, 3);
 
     if (p.Construct(512, 512, 1, 1)) {
         p.Start();
