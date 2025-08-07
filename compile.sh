@@ -1,1 +1,1 @@
-g++ -o "kompilat/leapfropendulum.exe" leapfropendulum.cpp -lX11 -lGL -lpthread -lpng -lstdc++fs -std=c++17 && echo compiled && "./kompilat/leapfropendulum.exe"
+g++ -o "kompilat/double_pendulum.exe" double_pendulum.cpp -lX11 -lGL -lpthread -lpng -lstdc++fs -std=c++17 && echo compiled && "./kompilat/double_pendulum.exe"
