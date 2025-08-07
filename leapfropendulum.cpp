@@ -113,12 +113,15 @@ class Pendulum : public olc::PixelGameEngine {
         const string central_img_path = "frops.png";
         olc::Sprite central_img;
 
+        pixel_pos origin;
+
         int debug;
         double viewport_size;
 
         movement m;
         double dt;
         double t;
+        double real_t;
         
         Pendulum(double _dt, double _viewport_size, function<void (movement&, double, bool)> _output_func, int _debug = 0) {
             sAppName = "Pendulum Simulation";
@@ -146,9 +149,14 @@ class Pendulum : public olc::PixelGameEngine {
             };
 
             t = 0;
+            real_t = 0;
+
+            origin = coord_to_pixel_pos(coord {0, 0});
 
             olc::Sprite img(central_img_path);
             central_img = img;
+
+            DrawSprite(origin.x - central_img.width / 2, origin.y - central_img.height, &central_img);
 
             if (debug > 0)
                 output_func(m, t, debug > 1);
@@ -157,13 +165,13 @@ class Pendulum : public olc::PixelGameEngine {
         }
 
         bool OnUserUpdate(float fElapsedTime) override {
-            m = leapfrog(m, pendulum_base_func, dt);
-            t += dt;
+            real_t += fElapsedTime;
+            while (t < real_t) {
+                m = leapfrog(m, pendulum_base_func, dt);
+                t += dt;
+            }
 
-            pixel_pos origin = coord_to_pixel_pos(coord {0, 0});
             pixel_pos frop = coord_to_pixel_pos(calculate_coord_from_angle(m.s / l));
-
-            DrawSprite(origin.x - central_img.width / 2, origin.y - central_img.height, &central_img);
 
             if (prev_frop.x >= 0) 
                 DrawLine(prev_frop.x, prev_frop.y, origin.x, origin.y, olc::Pixel(0, 0, 0));
