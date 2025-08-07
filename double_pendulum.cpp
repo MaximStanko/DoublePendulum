@@ -12,13 +12,22 @@ using namespace std;
 
 # define PI           3.14159265358979323846
 
-const double g = 4.00;
-const double l = 1.00;
+// default values
 
-const double th1_0 = - PI * (80.0 / 180.0);
-const double th2_0 = - PI * (90.0 / 180.0);
-const double th1p_0 = - PI * (0.0 / 180.0);
-const double th2p_0 = - PI * (0.0 / 180.0);
+double g = 9.81;
+double l = 1.00;
+
+double th1_0 = - PI * (80.0 / 180.0);
+double th2_0 = - PI * (90.0 / 180.0);
+double th1p_0 = - PI * (0.0 / 180.0);
+double th2p_0 = - PI * (0.0 / 180.0);
+
+int debug = 0;
+
+double dt = 0.001;
+double sim_speed = 0.8;
+
+// structs
 
 typedef struct {
     double th1;
@@ -111,11 +120,11 @@ movement dp_rk4(movement m, double dt) {
 
     // calculate next theta and its derivative
 
-    m.th1 = m.th1 + (k1_1 + 2 * k2_1 + 2 * k3_1 + k4_1) / 6, 2 * PI;
-    m.th2 = m.th2 + (k1_2 + 2 * k2_2 + 2 * k3_2 + k4_2) / 6, 2 * PI;
+    m.th1 = fmod(m.th1 + (k1_1 + 2 * k2_1 + 2 * k3_1 + k4_1) / 6, 2 * PI);
+    m.th2 = fmod(m.th2 + (k1_2 + 2 * k2_2 + 2 * k3_2 + k4_2) / 6, 2 * PI);
 
-    m.th1p = m.th1p + (l1_1 + 2 * l2_1 + 2 * l3_1 + l4_1) / 6, 2 * PI;
-    m.th2p = m.th2p + (l1_2 + 2 * l2_2 + 2 * l3_2 + l4_2) / 6, 2 * PI;
+    m.th1p = m.th1p + (l1_1 + 2 * l2_1 + 2 * l3_1 + l4_1) / 6;
+    m.th2p = m.th2p + (l1_2 + 2 * l2_2 + 2 * l3_2 + l4_2) / 6;
 
     return m;
 }
@@ -198,6 +207,7 @@ class DoublePendulum : public olc::PixelGameEngine {
 
         pixel_pos prev_pos1 = {-1, -1}, prev_pos2 = {-1, -1};
         map<vector<int>, olc::Pixel> prev_pixels;
+        double accumulator = 0.0;
 
     public:
 
@@ -211,13 +221,15 @@ class DoublePendulum : public olc::PixelGameEngine {
 
         movement m;
         double dt;
+        double real_dt;
         double t;
-        double real_t;
+        double sim_speed;
         
-        DoublePendulum(double _dt, double _viewport_size, int _debug = 0) {
+        DoublePendulum(double _dt, double _sim_speed, double _viewport_size, int _debug = 0) {
             sAppName = "Double Pendulum";
 
             dt = _dt;
+            sim_speed = _sim_speed;
 
             viewport_size = _viewport_size;
             debug = _debug;
@@ -238,7 +250,8 @@ class DoublePendulum : public olc::PixelGameEngine {
             };
 
             t = 0;
-            real_t = 0;
+
+            real_dt = dt / sim_speed;
 
             origin = coord_to_pixel_pos(coord {0, 0});
 
@@ -255,10 +268,16 @@ class DoublePendulum : public olc::PixelGameEngine {
 
         bool OnUserUpdate(float fElapsedTime) override {
 
-            real_t += fElapsedTime;
-            while (t < real_t) {
+            t += fElapsedTime;
+
+            accumulator += fElapsedTime;
+
+            if (accumulator > 20 * real_dt)
+                accumulator = fmod(accumulator, 20 * real_dt);
+
+            while (accumulator >= real_dt) {
                 m = dp_rk4(m, dt);
-                t += dt;
+                accumulator -= real_dt;
             }
 
             coord c1 = calculate_coord_from_angle(m.th1);
@@ -294,8 +313,31 @@ class DoublePendulum : public olc::PixelGameEngine {
         }
 };
 
-int main() {
-    DoublePendulum p(0.001, 2.25, 0);
+int main(int argc, char* argv[]) {
+
+    if (argc >= 3) {
+        th1_0 = - PI * (atof(argv[1]) / 180);
+        th2_0 = - PI * (atof(argv[2]) / 180);
+    }
+
+    if (argc >= 5) {
+        th1p_0 = PI * (atof(argv[3]) / 180);
+        th2p_0 = PI * (atof(argv[4]) / 180);
+    }
+
+    if (argc >= 6) {
+        g = atof(argv[5]);
+    }
+
+    if (argc >= 7) {
+        sim_speed = atof(argv[6]);
+    }
+
+    if (argc >= 8) {
+        debug = atoi(argv[7]);
+    }
+
+    DoublePendulum p(dt, sim_speed, 2.25, debug);
 
     if (p.Construct(512, 512, 1, 1)) {
         p.Start();
