@@ -1,15 +1,11 @@
-#define OLC_PGE_APPLICATION
-#include "olcPixelGameEngine.h"
+#define _USE_MATH_DEFINES
 
-#include <iostream>
-#include <iomanip>
-#include <sstream>
-#include <functional>
+#include "struct_core.h"
+#include "sim_core.h"
+
 #include <cmath>
 
 using namespace std;
-
-# define PI           3.14159265358979323846
 
 typedef struct {
     double s;
@@ -17,21 +13,11 @@ typedef struct {
     double a;
 } movement;
 
-typedef struct {
-    double x;
-    double y;
-} coord;
-
-typedef struct {
-    int x;
-    int y;
-} pixel_pos;
-
 const double g = 9.81;
 const double l = 1;
 
 const double v_0 = 0;
-const double theta_0 = - PI * (80.0 / 180.0);
+const double theta_0 = - M_PI * (120.0 / 180.0);
 
 double pendulum_base_func(double s) {
     double theta = s / l;
@@ -46,19 +32,8 @@ movement leapfrog(movement m, function<double (double)> A, double dt) {
     return m;
 }
 
-string round_to(double val, int prec) {
-    ostringstream string_stream;
-    string_stream << fixed << setprecision(prec) << val;
-    return string_stream.str();
-}
-
-coord calculate_coord_from_angle(double theta) {
-    coord c = {sin(theta) * l, cos(theta) * l};
-    return c;
-}
-
 void print_pendulum_pos(movement& m, double t, bool debug) {
-    coord c = calculate_coord_from_angle(m.s / l);
+    coord c = calculate_coord_from_angle(m.s / l, l);
     string rounded_t = round_to(t, 3);
     string empty_space(rounded_t.length() + 9, ' ');
     cout << "t = " << rounded_t << " :   x = " << (c.x >= 0 ? " " : "") << round_to(c.x / l, 3) << "\n";
@@ -75,7 +50,7 @@ void print_pendulum_pos(movement& m, double t, bool debug) {
 void print_pure_state(movement& m, double t, bool debug) {
     string rounded_t = round_to(t, 3);
     cout << "t = " << rounded_t << " :   theta = " << round_to(m.s / l, 3);
-    cout << " (" << round_to((m.s / l) / PI * 180.0, 1) << "*)";
+    cout << " (" << round_to((m.s / l) / M_PI * 180.0, 1) << "*)";
     if (debug) {
         string empty_space(rounded_t.length() + 9, ' ');
         cout << "\n";
@@ -106,7 +81,7 @@ void approximate_pendulum(int its, double dt, function<void (movement&, double, 
     }
 }
 
-class Pendulum : public olc::PixelGameEngine {
+class Pendulum : public PendulumCore {
     private:
 
         function<void (movement&, double, bool)> output_func;
@@ -120,7 +95,6 @@ class Pendulum : public olc::PixelGameEngine {
         pixel_pos origin;
 
         int debug;
-        double viewport_size;
 
         movement m;
         double dt;
@@ -136,12 +110,6 @@ class Pendulum : public olc::PixelGameEngine {
             debug = _debug;
 
             output_func = debug > 1 ? print_pure_state : print_pendulum_pos;
-        }
-
-        pixel_pos coord_to_pixel_pos(coord c) {
-            pixel_pos p = {(int) ((c.x + viewport_size) * ScreenWidth() / (viewport_size * 2)), 
-                (int) ((c.y + viewport_size) * ScreenWidth() / (viewport_size * 2))};
-            return p;
         }
 
         bool OnUserCreate() override {
@@ -176,7 +144,7 @@ class Pendulum : public olc::PixelGameEngine {
                 t += dt;
             }
 
-            pixel_pos frop = coord_to_pixel_pos(calculate_coord_from_angle(m.s / l));
+            pixel_pos frop = coord_to_pixel_pos(calculate_coord_from_angle(m.s / l, l));
 
             if (prev_frop.x >= 0) 
                 DrawLine(prev_frop.x, prev_frop.y, origin.x, origin.y, olc::Pixel(0, 0, 0));
@@ -193,7 +161,7 @@ class Pendulum : public olc::PixelGameEngine {
 };
 
 int main() {
-    Pendulum p(0.001, 2.25, 3);
+    Pendulum p(0.001, 2.25, 0);
 
     if (p.Construct(512, 512, 1, 1)) {
         p.Start();
