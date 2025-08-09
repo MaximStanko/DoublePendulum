@@ -89,7 +89,7 @@ class Pendulum : public PendulumCore {
 
     public:
 
-        const string central_img_path = "frops.png";
+        const string central_img_path = "assets/frops.png";
         olc::Sprite central_img;
 
         pixel_pos origin;
@@ -101,12 +101,12 @@ class Pendulum : public PendulumCore {
         double t;
         double real_t;
         
-        Pendulum(double _dt, double _viewport_size, int _debug = 0) {
+        Pendulum(double _dt, double _viewport_width, int _debug = 0) {
             sAppName = "Pendulum Simulation";
 
             dt = _dt;
 
-            viewport_size = _viewport_size;
+            viewport_width = _viewport_width;
             debug = _debug;
 
             output_func = debug > 1 ? print_pure_state : print_pendulum_pos;
@@ -124,7 +124,7 @@ class Pendulum : public PendulumCore {
             t = 0;
             real_t = 0;
 
-            origin = coord_to_pixel_pos(coord {0, 0});
+            origin = coord_to_pos(coord {0, 0});
 
             olc::Sprite img(central_img_path);
             central_img = img;
@@ -144,7 +144,7 @@ class Pendulum : public PendulumCore {
                 t += dt;
             }
 
-            pixel_pos frop = coord_to_pixel_pos(calculate_coord_from_angle(m.s / l, l));
+            pixel_pos frop = coord_to_pos(calculate_coord_from_angle(m.s / l, l));
 
             if (prev_frop.x >= 0) 
                 DrawLine(prev_frop.x, prev_frop.y, origin.x, origin.y, olc::Pixel(0, 0, 0));

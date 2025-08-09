@@ -1,5 +1,5 @@
 #define OLC_PGE_APPLICATION
-#include "olcPixelGameEngine.h"
+#include "lib/olcPixelGameEngine.h"
 
 using namespace std;
 
@@ -39,18 +39,64 @@ olc::Pixel hsl_to_pixel(float h, float s, float l) {
     return olc::Pixel(r, g, b);
 }
 
+pixel_pos coord_to_viewport_pos(coord pos, coord center, double viewport_width, int width) {
+    double viewport_ratio = (double) width / viewport_width;
+    coord new_pos = {pos.x - center.x, pos.y - center.y};
+    pixel_pos pp = {(int) ((new_pos.x + viewport_width / 2) * viewport_ratio), 
+        (int) ((new_pos.y + viewport_width / 2) * viewport_ratio)};
+    return pp;
+}
+
+vector<pixel_pos> get_line(pixel_pos pp1, pixel_pos pp2) {
+    vector<pixel_pos> pixels;
+    int x, y, t, dx, dy, incx, incy, pdx, pdy, ddx, ddy, deltaslowdirection, deltafastdirection, err;
+
+    dx = pp2.x - pp1.x;
+    dy = pp2.y - pp1.y;
+
+    incx = dx < 0 ? -1 : 1;
+    incy = dy < 0 ? -1 : 1;
+    if (dx < 0) dx = -dx;
+    if (dy < 0) dy = -dy;
+
+    if (dx > dy) {
+        pdx = incx; pdy = 0;
+        ddx = incx; ddy = incy;
+        deltaslowdirection = dy;   deltafastdirection = dx;
+    } else {
+        pdx = 0;    pdy = incy;
+        ddx = incx; ddy = incy;
+        deltaslowdirection = dx;   deltafastdirection = dy;
+    }
+
+    x = pp1.x;
+    y = pp1.y;
+    err = deltafastdirection / 2;
+    pixels.emplace_back(pixel_pos {x, y});
+
+    for (t = 0; t < deltafastdirection; ++t) {
+        err -= deltaslowdirection;
+        if (err < 0) {
+            err += deltafastdirection;
+            x += ddx;
+            y += ddy;
+        } else {
+            x += pdx;
+            y += pdy;
+        }
+        pixels.emplace_back(pixel_pos {x, y});
+    }
+
+    return pixels;
+}
+
 class PendulumCore : public olc::PixelGameEngine {
     public:
 
-        double viewport_size;
+        coord center = {0, 0};
+        double viewport_width;
 
-        pixel_pos coord_to_pixel_pos(coord c) {
-            pixel_pos p = {(int) ((c.x + viewport_size) * ScreenWidth() / (viewport_size * 2)), 
-                (int) ((c.y + viewport_size) * ScreenWidth() / (viewport_size * 2))};
-            return p;
+        pixel_pos coord_to_pos(coord c) {
+            return coord_to_viewport_pos(c, center, viewport_width, ScreenWidth());
         }
-
-        bool OnUserCreate() override {return true;};
-
-        bool OnUserUpdate(float fElapsedTime) override {return true;};
 };
