@@ -47,6 +47,13 @@ pixel_pos coord_to_viewport_pos(coord pos, coord center, double viewport_width, 
     return pp;
 }
 
+coord viewport_pos_to_coord(pixel_pos pos, pixel_pos viewport_center, double viewport_width, int width) {
+    double coord_ratio = viewport_width / (double) width;
+    coord c = {(double) (pos.x - viewport_center.x) * coord_ratio,
+        (double) (pos.y - viewport_center.y) * coord_ratio};
+    return c;
+}
+
 vector<pixel_pos> get_line(pixel_pos pp1, pixel_pos pp2) {
     vector<pixel_pos> pixels;
     int x, y, t, dx, dy, incx, incy, pdx, pdy, ddx, ddy, deltaslowdirection, deltafastdirection, err;
@@ -90,13 +97,18 @@ vector<pixel_pos> get_line(pixel_pos pp1, pixel_pos pp2) {
     return pixels;
 }
 
-class PendulumCore : public olc::PixelGameEngine {
+class SimCore : public olc::PixelGameEngine {
     public:
 
         coord center = {0, 0};
+        pixel_pos viewport_center = {ScreenWidth() / 2, ScreenHeight() / 2};
         double viewport_width;
 
         pixel_pos coord_to_pos(coord c) {
             return coord_to_viewport_pos(c, center, viewport_width, ScreenWidth());
+        }
+
+        coord pos_to_coord(pixel_pos pp) {
+            return viewport_pos_to_coord(pp, viewport_center, viewport_width, ScreenWidth());
         }
 };

@@ -81,7 +81,7 @@ void approximate_pendulum(int its, double dt, function<void (movement&, double, 
     }
 }
 
-class Pendulum : public PendulumCore {
+class Pendulum : public SimCore {
     private:
 
         function<void (movement&, double, bool)> output_func;

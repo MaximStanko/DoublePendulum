@@ -47,7 +47,7 @@ void print_dp(double time, double dt, bool debug) {
     int its = (int) (time / dt);
 
     for (int i = 0; i < its; i++) {
-        m = dp_rk4(m, dt);
+        m = dp_symplectic(m, dt);
         t += dt;
         print_pure_state(m, t, debug);
     }
